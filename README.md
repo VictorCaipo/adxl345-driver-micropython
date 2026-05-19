@@ -1,6 +1,6 @@
-# ***ADXL345 Sensor***
+# ***ADXL345 driver on Mycropython***
 
-- We are building up a driver for the adxl345 sensor. It is a three-axis digital accelerometer. You can use both I2C and SPI bus serial communication with adxl345. We are using I2C here. 
+- We are building up a driver for the adxl345 sensor. You can use both I2C and SPI bus serial communication with adxl345. We are using I2C here. Feel free to use it in your projects. If something goes wrong, let me know.
 
 - To summarize:
     - ESP32 devkitc v4 (microcontroller)

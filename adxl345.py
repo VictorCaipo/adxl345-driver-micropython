@@ -8,7 +8,7 @@ class ADXL345:
     #registers    
     _REG_DEVID          = 0x00  #device ID adress
     
-    _REG_BW_RATE        = 0x2C  #data reate and power mode control
+    _REG_BW_RATE        = 0x2C  #data rate and power mode control
     _REG_POWER_CTL      = 0x2D  #power saving features control
     
     _REG_DATA_FORMAT    = 0x31  #data format control (sensibility)
@@ -49,46 +49,46 @@ class ADXL345:
         self.i2c.writeto_mem(self._I2C_ADDR, reg, bytes([value]))
 
 #2. Hardware Abstraction Layer HAL
+
     def _data_lecture(self):
         data = self.i2c.readfrom_mem(self._I2C_ADDR, self._REG_DATAX0, 6)
         #the sensor divide each axis lecture in two registers, so we have to put them together
-        x = (data[1] << 8) | data[0] #16 bits o 2 bytes
+        x = (data[1] << 8) | data[0] #16 bits or 2 bytes
         y = (data[3] << 8) | data[2]
         z = (data[5] << 8) | data[4]
         #complemento a 2
-        ii = 0b1000000000000000 
+        ii = 0x8000
         if x & ii: 
-            x -= 65536
+            x -= 0x10000
         if y & ii: 
-            y -= 65536
+            y -= 0x10000
         if z & ii: 
-            z -= 65536
-            
+            z -= 0x10000
         return x, y, z
-    def set_range(self, g_range):
-        """Configura el rango de medición: 2, 4, 8 o 16g."""
-        # Mapeo del rango deseado a los bits correspondientes del datasheet
-        ranges = {2: 0x00, 4: 0x01, 8: 0x02, 16: 0x03}
-        if g_range not in ranges:
-            raise ValueError("El rango debe ser 2, 4, 8 o 16")
+    
+    def _resolution(self, resl):
+        range = {2: 0b00, 4: 0b01, 8: 0b10, 16: 0b11}
+        #D1-D0 ranges, datasheet
+        if resl not in range:
+            raise ValueError("The allowed values are: 2, 4, 8, 16")
             
-        current_format = self._read_register(self._REG_DATA_FORMAT)
+        current_resolution = self._read_register(self._REG_DATA_FORMAT)
+        current_resolution &= 0b11111100#cleaning D1-D0
 
-        current_format &= 0xFC
-        
-        new_format = current_format | ranges[g_range]
-
-        self._write_register(self._REG_DATA_FORMAT, new_format)
+        new_resolution = current_resolution | range[resl]
+        self._write_register(self._REG_DATA_FORMAT, new_resolution)
 
     def set_data_rate(self, rate_hz):
-    
-        rates = {
-            100: 0x0A,  # Por defecto al encender
-            200: 0x0B,
+    #here change
+        rate = {
             400: 0x0C,
-            800: 0x0D
+            200: 0x0B,
+            100: 0x0A,
+            50: 0x09,
+            25: 0x08,
+            12.5: 0x07
         }
-        if rate_hz not in rates:
-            raise ValueError("Tasas soportadas en este ejemplo: 100, 200, 400 u 800 Hz")
-            
-        self._write_register(self._REG_BW_RATE, rates[rate_hz])
+        if rate_hz not in rate:
+            raise ValueError("Choose: 12.5, 25, 50, 100, 200, 400")
+        self._write_register(self._REG_BW_RATE, rate[rate_hz])
+        #datasheet said it works expense of slightly greater noise
