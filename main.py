@@ -1,0 +1,15 @@
+from machine import Pin, I2C
+from adxl345 import ADXL345
+import time
+
+i2c = I2C(0, scl=Pin(22), sda=Pin(21), freq=400000)
+
+#debugg
+    #scan devuelve una lista vacia el problema es electrico
+print("Escaneando bus I2C...")
+dispositivos = i2c.scan()
+print(f"Dispositivos encontrados: {[hex(d) for d in dispositivos]}")
+#debugg
+
+sensor = ADXL345(i2c)
+    
