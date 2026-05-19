@@ -1,18 +1,26 @@
 # ***ADXL345 Sensor***
-- Developing a sensor driver from scratch
 
-## ***General work flow***
+- We are building up a driver for the adxl345 sensor. It is a three-axis digital accelerometer. You can use both I2C and SPI bus serial communication with adxl345. We are using I2C here. 
+
+- To summarize:
+    - ESP32 devkitc v4 (microcontroller)
+    - ADXL345 (sensor)
+    - I2C (serial_bus_communication)
+
+
+## ***0. Contents***
     1. Register Map
     2. Hardware Abstraction Layer (HAL)
     3. Deriver Logic/ API Layer (main code)
+    4. I2C library
 
 > We are going to build a class for each layer */ˈleɪ.ər/*
 
-### ***1. Register Map***
+## ***1. Register Map***
 - A register is type of memory (voltail memory). Directly connected to the hardware.
 
 
-# ***I2C library***
+## ***4. I2C library***
 - We are using the oficial code provided by micropython creators:
 https://docs.micropython.org/en/latest/library/machine.I2C.html
 - Here we summarize all used functions on the adxl345.py code.
