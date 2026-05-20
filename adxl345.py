@@ -13,7 +13,7 @@ class ADXL345:
     
     _REG_DATA_FORMAT    = 0x31  #data format control (sensibility)
 
-    _REG_DATAX0         = 0x32  #where sensor save data
+    _REG_DATAX0         = 0x32  #sensor values (accelerometer)
     _REG_DATAX1         = 0x33
     _REG_DATAY0         = 0x34
     _REG_DATAY1         = 0x35
@@ -30,7 +30,7 @@ class ADXL345:
             
         dev_id = self._read_register(self._REG_DEVID)
         if dev_id != self._ID_EXPECTED:
-            print(f"ADXL345 no encontrado. ID actual: {hex(dev_id)}, ID esperado: {hex(self._ID_EXPECTED)}")
+            raise RuntimeError(f"ADXL345 no encontrado. ID actual: {hex(dev_id)}, ID esperado: {hex(self._ID_EXPECTED)}")
         
         print("ADXL345 detected successfully")
             
@@ -50,7 +50,7 @@ class ADXL345:
 
 #2. Hardware Abstraction Layer HAL
 
-    def _data_lecture(self):
+    def data_lecture(self):
         data = self.i2c.readfrom_mem(self._I2C_ADDR, self._REG_DATAX0, 6)
         #the sensor divide each axis lecture in two registers, so we have to put them together
         x = (data[1] << 8) | data[0] #16 bits or 2 bytes
@@ -66,12 +66,12 @@ class ADXL345:
             z -= 0x10000
         return x, y, z
     
-    def _resolution(self, resl):
+    def resolution(self, resl):
         range = {2: 0b00, 4: 0b01, 8: 0b10, 16: 0b11}
         #D1-D0 ranges, datasheet
         if resl not in range:
             raise ValueError("The allowed values are: 2, 4, 8, 16")
-            
+        print("Selected resolution: ",resl)   
         current_resolution = self._read_register(self._REG_DATA_FORMAT)
         current_resolution &= 0b11111100#cleaning D1-D0
 
@@ -79,16 +79,15 @@ class ADXL345:
         self._write_register(self._REG_DATA_FORMAT, new_resolution)
 
     def set_data_rate(self, rate_hz):
-    #here change
+        #in the adxl345 datasheet you can find there is plenty of value you could set up
+        #we are defining just a couple of them, feel free to modifiy the code
         rate = {
             400: 0x0C,
             200: 0x0B,
             100: 0x0A,
             50: 0x09,
-            25: 0x08,
-            12.5: 0x07
         }
         if rate_hz not in rate:
-            raise ValueError("Choose: 12.5, 25, 50, 100, 200, 400")
+            raise ValueError("Allowed values: 50, 100, 200, 400")
+        print("Selected data rate: ",rate_hz)
         self._write_register(self._REG_BW_RATE, rate[rate_hz])
-        #datasheet said it works expense of slightly greater noise

@@ -11,5 +11,14 @@ dispositivos = i2c.scan()
 print(f"Dispositivos encontrados: {[hex(d) for d in dispositivos]}")
 #debugg
 
+#It is necessary to always state the constructure
 sensor = ADXL345(i2c)
-    
+sensor.set_data_rate(100)
+sensor.resolution(4)
+print("Confguracion exitosa")
+time.sleep(2)
+
+while True:
+    x, y, z = sensor.data_lecture()
+    print(f"Eje X: {x:6d} | Eje Y: {y:6d} | Eje Z: {z:6d}")
+    time.sleep(1)
