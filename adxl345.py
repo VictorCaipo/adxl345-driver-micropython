@@ -1,7 +1,7 @@
 
 class ADXL345:
-# 1. Register map (connection to the sensor)
-    #atributes    
+
+# 0. Key registers  
 
     _I2C_ADDR           = 0x53 #bus i2c address 
 
@@ -21,21 +21,21 @@ class ADXL345:
     _REG_DATAZ1         = 0x37
 
     #values
-    _ID_EXPECTED        = 0xE5  #expected value  from _REG_DEVID 
-    _ENABLE_MEASURE     = 0x08  #mesure bit is on from_REG_POWER_CTLS
+    _ID_EXPECTED        = 0xE5  #expected value from _REG_DEVID 
+    _ENABLE_MEASURE     = 0x08  #mesure bit from_REG_POWER_CTLS
+    _RESOLUTION         = 0b00  #resolution 2 by default
+
+# 1. Register map
 
     #methods
     def __init__(self, i2c):
         self.i2c = i2c
-            
         dev_id = self._read_register(self._REG_DEVID)
         if dev_id != self._ID_EXPECTED:
-            raise RuntimeError(f"ADXL345 no encontrado. ID actual: {hex(dev_id)}, ID esperado: {hex(self._ID_EXPECTED)}")
-        
-        print("ADXL345 detected successfully")
-            
-        # Configurar el sensor para que empiece a medir
+            raise RuntimeError(f"Sensor current ID: {hex(dev_id)} | Expected ID: {hex(self._ID_EXPECTED)}")
         self._write_register(self._REG_POWER_CTL, self._ENABLE_MEASURE)
+        self._RESOLUTION = 0b00
+        self.resolution(2)
 
     def _read_register(self, reg):
         result = self.i2c.readfrom_mem(self._I2C_ADDR, reg, 1)
@@ -48,7 +48,7 @@ class ADXL345:
     def _write_register(self, reg, value):
         self.i2c.writeto_mem(self._I2C_ADDR, reg, bytes([value]))
 
-#2. Hardware Abstraction Layer HAL
+# 2. Hardware Abstraction Layer HAL
 
     def data_lecture(self):
         data = self.i2c.readfrom_mem(self._I2C_ADDR, self._REG_DATAX0, 6)
@@ -56,8 +56,7 @@ class ADXL345:
         x = (data[1] << 8) | data[0] #16 bits or 2 bytes
         y = (data[3] << 8) | data[2]
         z = (data[5] << 8) | data[4]
-        #complemento a 2
-        ii = 0x8000
+        ii = 0x8000 #to verify if the number is negative
         if x & ii: 
             x -= 0x10000
         if y & ii: 
@@ -67,27 +66,38 @@ class ADXL345:
         return x, y, z
     
     def resolution(self, resl):
-        range = {2: 0b00, 4: 0b01, 8: 0b10, 16: 0b11}
+        values = {2: 0b00, 4: 0b01, 8: 0b10, 16: 0b11}
         #D1-D0 ranges, datasheet
-        if resl not in range:
-            raise ValueError("The allowed values are: 2, 4, 8, 16")
-        print("Selected resolution: ",resl)   
+        if resl not in values:
+            raise ValueError("Choose any of these values: 2, 4, 8, 16")  
+        self._RESOLUTION = values[resl]
         current_resolution = self._read_register(self._REG_DATA_FORMAT)
         current_resolution &= 0b11111100#cleaning D1-D0
-
-        new_resolution = current_resolution | range[resl]
+        new_resolution = current_resolution | self._RESOLUTION
         self._write_register(self._REG_DATA_FORMAT, new_resolution)
 
     def set_data_rate(self, rate_hz):
         #in the adxl345 datasheet you can find there is plenty of value you could set up
         #we are defining just a couple of them, feel free to modifiy the code
-        rate = {
-            400: 0x0C,
-            200: 0x0B,
-            100: 0x0A,
-            50: 0x09,
-        }
+        rate = {400: 0x0C, 200: 0x0B, 100: 0x0A, 50: 0x09}
         if rate_hz not in rate:
-            raise ValueError("Allowed values: 50, 100, 200, 400")
+            raise ValueError("Choose any of these: 50, 100, 200, 400")
         print("Selected data rate: ",rate_hz)
         self._write_register(self._REG_BW_RATE, rate[rate_hz])
+
+# 3. Application Programming Interface
+
+    def get_acceleration(self):
+        
+        raw_x, raw_y, raw_z = self.data_lecture()
+ 
+        scale_factor = {0b00:3.9, 0b01:7.8, 0b10:15.6, 0b11:31.2}#mg/LSB
+        
+        factor = scale_factor[self._RESOLUTION]/1000 #g/LSB 
+        x_g = raw_x * factor
+        y_g = raw_y * factor
+        z_g = raw_z * factor
+    
+        return x_g, y_g, z_g
+
+        

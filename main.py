@@ -19,6 +19,6 @@ print("Confguracion exitosa")
 time.sleep(2)
 
 while True:
-    x, y, z = sensor.data_lecture()
-    print(f"Eje X: {x:6d} | Eje Y: {y:6d} | Eje Z: {z:6d}")
+    x, y, z = sensor.get_acceleration()
+    print(f"Eje X: {x:6f} | Eje Y: {y:6f} | Eje Z: {z:6f}")
     time.sleep(1)
