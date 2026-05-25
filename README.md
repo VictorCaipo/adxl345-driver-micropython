@@ -7,6 +7,7 @@
     - [Example (main.py)](#22-example-mainpy)
 3. [API Reference](#3-api-reference)
 4. [Implementation details and registers](#4-implementation-details-and-registers)
+5. [I2C methods used in the driver](#5-i2c-methods-implemented-inside-the-driver)
 
 ## ***1. Short description and requirements***
 - This is a sensor driver for an accelerometer named the ADXL345. It can work with both I2C and SPI; however, in this case, I am using the I2C bus. 
@@ -22,7 +23,7 @@
 
 <p align="center">
   <img src="./01.documentation_resources/02.sensor_connection.png"
-    alt="Diagrama de conexión I2C" width="300">
+    alt="Diagrama de conexión I2C" width="350">
 </p>
 
 - Sensor Connection:
@@ -37,10 +38,10 @@
 
 <p align="center">
   <img src="./01.documentation_resources/05.sensor_connection.jpeg"
-    alt="Diagrama de conexión I2C" width="100">
+    alt="Diagrama de conexión I2C" width="150">
 </p>
 
-### 2.2. Example (main.py)
+### 2.2. Example
 - This is a basic example to show how to use the key methods.
 
 ```python
@@ -84,7 +85,7 @@ while True:
 
 <p align="center">
   <img src="./01.documentation_resources/03.table35.png"
-    alt="Diagrama de conexión I2C" width="250">
+    alt="Diagrama de conexión I2C" width="300">
 </p>
 
 - 3.4. object.set_data_rate(data_rate_hz) [method] 
@@ -94,7 +95,7 @@ while True:
 
 <p align="center">
   <img src="./01.documentation_resources/04.table07.png"
-    alt="Diagrama de conexión I2C" width="250">
+    alt="Diagrama de conexión I2C" width="300">
 </p>
 
 -  3.5. object.set_data_rate(data_rate_hz) [method] 
@@ -104,7 +105,7 @@ while True:
 
 <p align="center">
   <img src="./01.documentation_resources/04.table07.png"
-    alt="Diagrama de conexión I2C" width="250">
+    alt="Diagrama de conexión I2C" width="300">
 </p>
 
 ### ***4. Implementation details and registers***
@@ -125,6 +126,28 @@ while True:
 | `0x2D` | `_REG_POWER_CTL` | W | `0x08` | Sets the `Measure` bit to 1, enabling continuous sensor sampling. |
 | `0x31` | `_REG_DATA_FORMAT` | R/W | Mask `0b11111100` | Manages the dynamic G-range by manipulating bits `D1` and `D0`. |
 | `0x32` to `0x37` | `_REG_DATAX0` to `_REG_DATAZ1` | R | - | 6-byte block containing raw twos-complement acceleration data (LSB and MSB per axis). |
+
+### ***5. I2C methods implemented inside the driver***
+
+- I have written an ADXL345 driver based on the I2C library supported by MicroPython. Below is a summary of all the functions used in the driver.
+> https://docs.micropython.org/en/latest/library/machine.I2C.html
+
+- 5.1. I2C(id, *, scl, sda, freq=400000, timeout=50000) [constructor]
+    - It constructs and returns a new I2C object using the specified parameters.
+    - `id` identifies a particular I2C peripheral. Since some microcontrollers have more than one, make sure to select the correct one.
+    - `scl` must be a Pin object specifying the SCL line.
+    - `sda` must be a Pin object specifying the SDA line.
+    - `freq` is an integer that sets the maximum frequency for SCL.
+    - `timeout` is the maximum time in microseconds allowed for I2C transactions.
+
+- 5.2. I2C.scan() [method]
+    - Scans all I2C peripheral addresses between 0x08 and 0x77 inclusive and returns a list of those that respond. This makes it easy to identify which peripherals are connected.
+
+- 5.3. I2C.readfrom_mem(addr, memaddr, nbytes, *, addrsize=8) [method]
+    - Reads `nbytes` from the peripheral specified by `addr`, starting from the memory address specified by `memaddr`. The `addrsize` argument specifies the register address size in bits.
+
+- 5.4. I2C.writeto_mem(addr, memaddr, buf, *, addrsize=8) [method]
+    - Writes the buffer `buf` to the peripheral specified by `addr`, starting from the memory address specified by `memaddr`.
 
 > Victor Caipo
 
