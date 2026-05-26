@@ -121,8 +121,8 @@ while True:
 | `0x00` | `_REG_DEVID` | R | `0xE5` | Device ID |
 | `0x2C` | `_REG_BW_RATE` | W | `0x09` to `0x0C` | Data rate |
 | `0x2D` | `_REG_POWER_CTL` | W | `0x08` | Enable measure |
-| `0x31` | `_REG_DATA_FORMAT` | R/W | Mask `0b11111100` | Manages the dynamic G-range |
-| `0x32` to `0x37` | `_REG_DATAX0` to `_REG_DATAZ1` | R | - | 6-byte block containing raw twos-complement acceleration data |
+| `0x31` | `_REG_DATA_FORMAT` | R/W | Mask `0b11111100` | Data format control (resolution) |
+| `0x32` to `0x37` | `_REG_DATAX0` to `_REG_DATAZ1` | R | - | X, Y, Z Axis values |
 
 ## ***6. Interaction with I2C library***
 
