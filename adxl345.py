@@ -1,18 +1,14 @@
-
 class ADXL345:
-
 # 0. Key registers  
 
+    #i2c registers
     _I2C_ADDR           = 0x53 #bus i2c address 
 
-    #registers    
+    #sensor registers    
     _REG_DEVID          = 0x00  #device ID adress
-    
     _REG_BW_RATE        = 0x2C  #data rate and power mode control
     _REG_POWER_CTL      = 0x2D  #power saving features control
-    
     _REG_DATA_FORMAT    = 0x31  #data format control (sensibility)
-
     _REG_DATAX0         = 0x32  #sensor values (accelerometer)
     _REG_DATAX1         = 0x33
     _REG_DATAY0         = 0x34

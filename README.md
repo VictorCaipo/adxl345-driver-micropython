@@ -1,29 +1,43 @@
 # ***ADXL345 driver on MicroPython***
 
 ## ***Contents***
-1. [Short description and requirements](#1-short-description-and-requirements)
-2. [Quickstart](#2-quickstart)
-    - [Hardware connection](#21-hardware-connection)
-    - [Example (main.py)](#22-example-mainpy)
-3. [API Reference](#3-api-reference)
-4. [Implementation details and registers](#4-implementation-details-and-registers)
-5. [I2C methods used in the driver](#5-i2c-methods-implemented-inside-the-driver)
+1. [Short description](#1-short-description)
+2. [Resources](#2-resources)
+3. [Quickstart](#3-quickstart)
+    - 3.1. [Hardware connection](#31-hardware-connection)
+    - 3.2. [Example](#32-example)
+4. [API Reference](#4-api-reference)
+    - 4.1. [ADXL345()](#41-adxl345-constructor)
+    - 4.2. [object.get_acceleration()](#42-objectget_acceleration-method)
+    - 4.3. [object.resolution()](#43-objectresolutionresolution-method)
+    - 4.4. [object.set_data_rate()](#44-objectset_data_ratedata_rate_hz-method)
+5. [Initialization Sequence and Registers](#5-initialization-sequence-and-registers)
+    - 5.1. [Initialization Sequence](#51-initialization-sequence)
+    - 5.2. [Registers](#52-used-register-map)
+6. [Interaction with I2C library](#6-interaction-with-i2c-library)
+    - 6.1 [I2C()](#61-i2cid--scl-sda-freq400000-timeout50000)
+    - 6.2 [object.scan()](#62-objectscan)
+    - 6.3 [object.readfrom_memaddr()](#63-objectreadfrom_memaddr-memaddr-nbytes--addrsize8)
+    - 6.4 [object.writeto_memaddr()](#64-objectwriteto_memaddr-memaddr-buf--addrsize8)
 
-## ***1. Short description and requirements***
-- This is a sensor driver for an accelerometer named the ADXL345. It can work with both I2C and SPI; however, in this case, I am using the I2C bus. 
-- In the folder called `01.documentation_resources`, I have attached the official ADXL345 datasheet provided by Analog Devices, among others. 
-- What do you need to work with this driver?
-    - An ADXL345 sensor/accelerometer "on a breakout board".
-    - An I2C serial bus connection.
-    - A compatible microcontroller.
 
-## ***2. Quickstart***
-### 2.1. Hardware connection
-- Be aware that this connection only works for an on-board sensor (probably your case); otherwise, you will have to add a couple of pull-up resistors next to the SDA/SCL GPIOs (review the ADXL345 datasheet).
+## ***1. Short description***
+- This is a driver for the on-board accelerometer ADXL345. I2C is the medium of communication.
+- You can use this driver (adxl345.py) for any microcontroller that supports micropython.
+
+## ***2. Resources***
+- In the folder called `01.documentation_resources`, I have attached the official ADXL345 datasheet provided by Analog Devices, and some images  extracted from the datasheet as well as a real picture of the sensor. 
+- Links:
+    - ADXL345 Datasheet: https://www.analog.com/en/products/adxl345.html
+    - Micropython I2C library: https://docs.micropython.org/en/latest/library/machine.I2C.html
+
+## ***3. Quickstart***
+### ***3.1. Hardware connection***
+- The left-hand image is a general diagram for the sensor connection to the microcontroller. The right-hand image is a picture of the sensor, as you can notice it has other pins used for different purposes.
 
 <p align="center">
-  <img src="./01.documentation_resources/02.sensor_connection.png"
-    alt="Diagrama de conexión I2C" width="350">
+  <img src="./01.documentation_resources/02.sensor_connections.png"
+    alt="Diagrama de conexión I2C" width="400">
 </p>
 
 - Sensor Connection:
@@ -36,13 +50,10 @@
     - **SDA** -> SDA microcontroller Pin (check out your microcontroller's datasheet)
     - **SCL** -> SCL microcontroller Pin (check out your microcontroller's datasheet)
 
-<p align="center">
-  <img src="./01.documentation_resources/05.sensor_connection.jpeg"
-    alt="Diagrama de conexión I2C" width="150">
-</p>
+- Be aware that this connection only works for an on-board sensor (probably your case); otherwise, you will have to add a couple of pull-up resistors next to the SDA/SCL GPIOs (review the ADXL345 datasheet).
 
-### 2.2. Example
-- This is a basic example to show how to use the key methods.
+### ***3.2. Example***
+- This example show you how to basically use the driver.
 
 ```python
 import time
@@ -66,90 +77,75 @@ while True:
     time.sleep(2)
 ```
 
-## ***3. API Reference***
+## ***4. API Reference***
 
-- 3.1. ADXL345() [constructor]
-    - Arguments: You must enter an I2C object.
-    - Output: None.
-    - Description: It sets up the connection between the accelerometer and the microcontroller via the I2C communication bus. It also sets the sensor resolution to 2 by default. If an error message appears on your screen, it is probably because of a wrong hardware connection.
+### ***4.1. ADXL345() [constructor]***
+- Arguments: You must enter an I2C object.
+- Output: None.
+- Description: It sets up the connection between the accelerometer and the microcontroller via the I2C communication bus. It also sets the sensor resolution to 2 by default. If an error message appears on your screen, it is probably because of a wrong hardware connection.
 
-- 3.2. object.get_acceleration() [method]
-    - Arguments: It does not need any argument.
-    - Output: It returns a tuple with three values (x, y, z) in "g" (Earth gravity) units.
-    - Description: It gets the acceleration values in g units. The sensor changes its scale factor depending on its resolution; thus, it is always necessary to declare the resolution at first. If you don't initialize object.resolution(), the program will still work because I have initialized the resolution value to +/- 2g by default. 
+### ***4.2. object.get_acceleration() [method]***
+- Arguments: It does not need any argument.
+- Output: It returns a tuple with three values (x, y, z) in "g" (Earth gravity) units.
+- Description: It gets the acceleration values in g units. The sensor changes its scale factor depending on its resolution; thus, it is always necessary to declare the resolution at first. If you don't initialize object.resolution(), the program will still work because I have initialized the resolution value to +/- 2g by default. 
 
-- 3.3. object.resolution(resolution) [method]
-    - Arguments: It needs only one argument. Choose any of the following values: [2, 4, 8, 16] (corresponding to +/- 2g, 4g, 8g, or 16g).
-    - Output: None.
-    - Description: It sets up the resolution (sensitivity). If you don't use any of the provided values, you will get an error message. If you don't use an appropriate resolution, you could get invalid data.
+### ***4.3. object.resolution(resolution) [method]***
+- Arguments: It needs only one argument. Choose any of the following values: [2, 4, 8, 16] (corresponding to +/- 2g, 4g, 8g, or 16g).
+- Output: None.
+- Description: It sets up the resolution (sensitivity). If you don't use any of the provided values, you will get an error message. If you don't use an appropriate resolution, you could get invalid data.
 
-<p align="center">
-  <img src="./01.documentation_resources/03.table35.png"
-    alt="Diagrama de conexión I2C" width="300">
-</p>
+### ***4.4. object.set_data_rate(data_rate_hz) [method]***
+- Arguments: It needs only one argument. Choose any of the following values: [50, 100, 200, 400] Hz.
+- Output: None.
+- Description: It sets up how fast the sensor sends data to the microcontroller in Hz. Only 4 data rate values have been implemented. However, as you can see in table 7, it is possible to configure many other rate values.
 
-- 3.4. object.set_data_rate(data_rate_hz) [method] 
-    - Arguments: It needs only one argument. Choose any of the following values: [50, 100, 200, 400] Hz.
-    - Output: None.
-    - Description: It sets up how fast the sensor sends data to the microcontroller in Hz. Only 4 data rate values have been implemented. However, as you can see in table 7, it is possible to configure many other rate values.
+## ***5. Initialization Sequence and Registers***
 
-<p align="center">
-  <img src="./01.documentation_resources/04.table07.png"
-    alt="Diagrama de conexión I2C" width="300">
-</p>
+### ***5.1. Initialization Sequence***
 
--  3.5. object.set_data_rate(data_rate_hz) [method] 
-    - Arguments: it needs only one argument, choose any of the following values: [50, 100, 200, 400] Hz.
-    - Output: none
-    - Description: it sets up how fast sensor sends data to the microcontroller at "Hz. It has just been set up 4 rate values. However, as you can see on table 7 it is possible to configure many other rate values.
+ - I2C connection: The constructure save `0x53` (`_I2C_ADDR`) as an attribute to be used later.
 
-<p align="center">
-  <img src="./01.documentation_resources/04.table07.png"
-    alt="Diagrama de conexión I2C" width="300">
-</p>
+- Identity Validation: The constructor reads 1 byte from register `0x00` (`_REG_DEVID`). If the returned value does not match `0xE5` (`_ID_EXPECTED`), the driver halts execution and raises a `RuntimeError`. This mechanism ensures that the physical wiring and the I2C address (`0x53`) are correct before proceeding.
 
-### ***4. Implementation details and registers***
+- Power Enablement: The driver writes `0x08` (`_ENABLE_MEASURE`) into register `0x2D` (`_REG_POWER_CTL`). This transitions the sensor from Standby Mode (low power, no data updates) to Measurement Mode.
 
-- 4.1. Initialization Sequence:
-    1. Identity Validation: The constructor reads 1 byte from register `0x00` (`_REG_DEVID`). If the returned value does not match `0xE5` (`_ID_EXPECTED`), the driver halts execution and raises a `RuntimeError`. This mechanism ensures that the physical wiring and the I2C address (`0x53`) are correct before proceeding.
-    2. Power Enablement: The driver writes `0x08` (`_ENABLE_MEASURE`) into register `0x2D` (`_REG_POWER_CTL`). This transitions the sensor from Standby Mode (low power, no data updates) to Measurement Mode.
-    3. Default Range Selection: It sets the internal tracking variable `_RESOLUTION` to `0b00` and automatically invokes the `resolution(2)` method to establish a baseline dynamic range of $\pm 2g$.
+- Default Range Selection: It sets the internal tracking variable `_RESOLUTION` to `0b00` and automatically invokes the `resolution(2)` method to establish a baseline dynamic range of $\pm 2g$.
 
 
-- 4.2. Used Register Map:
-    - The driver does not modify the entire ADXL345 register map. Instead, it interacts exclusively with the following specific control and data memory addresses:
+### ***5.2. Used Register Map***
+
+- The driver does not modify the entire ADXL345 register map. Instead, it interacts exclusively with the following specific control and data memory addresses:
 
 | Address | Register Name | Access | Applied Value / Mask | Driver Purpose |
 | :--- | :--- | :---: | :---: | :--- |
-| `0x00` | `_REG_DEVID` | R | `0xE5` | Chip signature verification during object instantiation. |
-| `0x2C` | `_REG_BW_RATE` | W | `0x09` to `0x0C` | Adjusts the Output Data Rate (ODR) from 50 Hz up to 400 Hz. |
-| `0x2D` | `_REG_POWER_CTL` | W | `0x08` | Sets the `Measure` bit to 1, enabling continuous sensor sampling. |
-| `0x31` | `_REG_DATA_FORMAT` | R/W | Mask `0b11111100` | Manages the dynamic G-range by manipulating bits `D1` and `D0`. |
-| `0x32` to `0x37` | `_REG_DATAX0` to `_REG_DATAZ1` | R | - | 6-byte block containing raw twos-complement acceleration data (LSB and MSB per axis). |
+| `0x00` | `_REG_DEVID` | R | `0xE5` | Device ID |
+| `0x2C` | `_REG_BW_RATE` | W | `0x09` to `0x0C` | Data rate |
+| `0x2D` | `_REG_POWER_CTL` | W | `0x08` | Enable measure |
+| `0x31` | `_REG_DATA_FORMAT` | R/W | Mask `0b11111100` | Manages the dynamic G-range |
+| `0x32` to `0x37` | `_REG_DATAX0` to `_REG_DATAZ1` | R | - | 6-byte block containing raw twos-complement acceleration data |
 
-### ***5. I2C methods implemented inside the driver***
+## ***6. Interaction with I2C library***
 
-- I have written an ADXL345 driver based on the I2C library supported by MicroPython. Below is a summary of all the functions used in the driver.
-> https://docs.micropython.org/en/latest/library/machine.I2C.html
+- The driver is based on and rely on I2C library (written by micropython creators). The following methods are used to built up the driver.
 
-- 5.1. I2C(id, *, scl, sda, freq=400000, timeout=50000) [constructor]
-    - It constructs and returns a new I2C object using the specified parameters.
-    - `id` identifies a particular I2C peripheral. Since some microcontrollers have more than one, make sure to select the correct one.
-    - `scl` must be a Pin object specifying the SCL line.
-    - `sda` must be a Pin object specifying the SDA line.
-    - `freq` is an integer that sets the maximum frequency for SCL.
-    - `timeout` is the maximum time in microseconds allowed for I2C transactions.
+### ***6.1. I2C(id, , scl, sda, freq=400000, timeout=50000)***
+- It constructs and returns a new I2C object using the specified parameters.
+- `id` identifies a particular I2C peripheral. Since some microcontrollers have more than one, make sure to select the correct one.
+- `scl` must be a Pin object specifying the SCL line.
+- `sda` must be a Pin object specifying the SDA line.
+- `freq` is an integer that sets the maximum frequency for SCL.
+- `timeout` is the maximum time in microseconds allowed for I2C transactions.
+### ***6.2. object.scan()***
+- Scans all I2C peripheral addresses between 0x08 and 0x77 inclusive and returns a list of those that respond. This makes it easy to identify which peripherals are connected.
 
-- 5.2. I2C.scan() [method]
-    - Scans all I2C peripheral addresses between 0x08 and 0x77 inclusive and returns a list of those that respond. This makes it easy to identify which peripherals are connected.
+### ***6.3. object.readfrom_mem(addr, memaddr, nbytes, , addrsize=8)***
+- Reads `nbytes` from the peripheral specified by `addr`, starting from the memory address specified by `memaddr`. The `addrsize` argument specifies the register address size in bits.
 
-- 5.3. I2C.readfrom_mem(addr, memaddr, nbytes, *, addrsize=8) [method]
-    - Reads `nbytes` from the peripheral specified by `addr`, starting from the memory address specified by `memaddr`. The `addrsize` argument specifies the register address size in bits.
+### ***6.4. object.writeto_mem(addr, memaddr, buf, , addrsize=8)***
+- Writes the buffer `buf` to the peripheral specified by `addr`, starting from the memory address specified by `memaddr`.
 
-- 5.4. I2C.writeto_mem(addr, memaddr, buf, *, addrsize=8) [method]
-    - Writes the buffer `buf` to the peripheral specified by `addr`, starting from the memory address specified by `memaddr`.
-
-> Victor Caipo
+## Authors & Contributors
+* **Victor Caipo** (Author) - [GitHub](https://github.com/VictorCaipo)
 
 
 
