@@ -17,13 +17,13 @@
 6. [Interaction with I2C library](#6-interaction-with-i2c-library)
     - 6.1 [I2C()](#61-i2cid--scl-sda-freq400000-timeout50000)
     - 6.2 [object.scan()](#62-objectscan)
-    - 6.3 [object.readfrom_memaddr()](#63-objectreadfrom_memaddr-memaddr-nbytes--addrsize8)
-    - 6.4 [object.writeto_memaddr()](#64-objectwriteto_memaddr-memaddr-buf--addrsize8)
+    - 6.3 [object.readfrom_mem()](#63-objectreadfrom_memaddr-memaddr-nbytes--addrsize8)
+    - 6.4 [object.writeto_mem()](#64-objectwriteto_memaddr-memaddr-buf--addrsize8)
 
 
 ## ***1. Short description***
 - This is a driver for the on-board accelerometer ADXL345. I2C is the medium of communication.
-- You can use this driver (adxl345.py) for any microcontroller that supports micropython.
+- You can use this driver (adxl345.py) for any microcontroller that supports MicroPython.
 
 ## ***2. Resources***
 - In the folder called `01.documentation_resources`, I have attached the official ADXL345 datasheet provided by Analog Devices, and some images  extracted from the datasheet as well as a real picture of the sensor. 
@@ -53,7 +53,7 @@
 - Be aware that this connection only works for an on-board sensor (probably your case); otherwise, you will have to add a couple of pull-up resistors next to the SDA/SCL GPIOs (review the ADXL345 datasheet).
 
 ### ***3.2. Example***
-- This example show you how to basically use the driver.
+- This example shows you how to basically use the driver.
 
 ```python
 import time
@@ -103,7 +103,7 @@ while True:
 
 ### ***5.1. Initialization Sequence***
 
- - I2C connection: The constructure save `0x53` (`_I2C_ADDR`) as an attribute to be used later.
+ - I2C connection: The constructure saves `0x53` (`_I2C_ADDR`) as an attribute to be used later.
 
 - Identity Validation: The constructor reads 1 byte from register `0x00` (`_REG_DEVID`). If the returned value does not match `0xE5` (`_ID_EXPECTED`), the driver halts execution and raises a `RuntimeError`. This mechanism ensures that the physical wiring and the I2C address (`0x53`) are correct before proceeding.
 
@@ -126,9 +126,9 @@ while True:
 
 ## ***6. Interaction with I2C library***
 
-- The driver is based on and rely on I2C library (written by micropython creators). The following methods are used to built up the driver.
+- The driver is based on and relies on the I2C library (written by micropython creators). The following methods are used to build up the driver.
 
-### ***6.1. I2C(id, , scl, sda, freq=400000, timeout=50000)***
+### ***6.1. I2C(id, scl, sda, freq=400000, timeout=50000)***
 - It constructs and returns a new I2C object using the specified parameters.
 - `id` identifies a particular I2C peripheral. Since some microcontrollers have more than one, make sure to select the correct one.
 - `scl` must be a Pin object specifying the SCL line.
@@ -138,10 +138,10 @@ while True:
 ### ***6.2. object.scan()***
 - Scans all I2C peripheral addresses between 0x08 and 0x77 inclusive and returns a list of those that respond. This makes it easy to identify which peripherals are connected.
 
-### ***6.3. object.readfrom_mem(addr, memaddr, nbytes, , addrsize=8)***
+### ***6.3. object.readfrom_mem(addr, memaddr, nbytes, addrsize=8)***
 - Reads `nbytes` from the peripheral specified by `addr`, starting from the memory address specified by `memaddr`. The `addrsize` argument specifies the register address size in bits.
 
-### ***6.4. object.writeto_mem(addr, memaddr, buf, , addrsize=8)***
+### ***6.4. object.writeto_mem(addr, memaddr, buf, addrsize=8)***
 - Writes the buffer `buf` to the peripheral specified by `addr`, starting from the memory address specified by `memaddr`.
 
 ## Authors & Contributors
